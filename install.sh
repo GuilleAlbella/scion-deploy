@@ -9,7 +9,7 @@
 #   2. Installs Docker Engine + Compose plugin if missing.
 #   3. Creates /opt/scion as the deploy root.
 #   4. Downloads docker-compose.yml + nginx.conf from this repo.
-#   5. Prompts for region, GROQ key, public port (with sensible defaults).
+#   5. Prompts for region and public port (with sensible defaults).
 #   6. Auto-generates a strong API_KEY.
 #   7. Pulls images from GHCR and brings the stack up.
 #   8. Prints the URL + admin key on success.
@@ -137,7 +137,9 @@ else
   read -r -p "  Public port [80]: " PORT
   PORT="${PORT:-80}"
 
-  read -r -p "  Groq API key (TAISA — leave empty to configure later): " GROQ_KEY
+  # TAISA / AI provider is pre-configured in the backend image (see
+  # backend/app/config/taisa_llm.yaml). The user doesn't need to
+  # touch anything for the assistant to work.
 
   # API_KEY: auto-generate a strong one. User never types this.
   if command -v openssl >/dev/null; then
@@ -152,9 +154,6 @@ else
   sed -i "s|^DATA_REGION=.*|DATA_REGION=$REGION|"           "$ENV_FILE"
   sed -i "s|^SCION_PUBLIC_PORT=.*|SCION_PUBLIC_PORT=$PORT|" "$ENV_FILE"
   sed -i "s|^API_KEY=.*|API_KEY=$GENERATED_KEY|"            "$ENV_FILE"
-  if [ -n "${GROQ_KEY:-}" ]; then
-    sed -i "s|^GROQ_API_KEY=.*|GROQ_API_KEY=$GROQ_KEY|" "$ENV_FILE"
-  fi
 
   chmod 600 "$ENV_FILE"
   ok "Wrote $ENV_FILE (mode 600)"

@@ -7,7 +7,7 @@
 #   1. Verifies Docker Desktop is installed and running.
 #   2. Creates %USERPROFILE%\scion as the deploy root.
 #   3. Downloads docker-compose.yml + nginx.conf from this repo.
-#   4. Prompts for region, GROQ key, public port (with sensible defaults).
+#   4. Prompts for region and public port (with sensible defaults).
 #   5. Auto-generates a strong API_KEY.
 #   6. Pulls images from GHCR and brings the stack up.
 #   7. Prints the URL + admin key on success.
@@ -88,7 +88,9 @@ if (Test-Path $EnvFile) {
     $port = Read-Host "  Public port [80]"
     if ([string]::IsNullOrWhiteSpace($port)) { $port = "80" }
 
-    $groqKey = Read-Host "  Groq API key (TAISA - leave empty to configure later)"
+    # TAISA / AI provider is pre-configured in the backend image (see
+    # backend/app/config/taisa_llm.yaml). The user doesn't need to
+    # touch anything for the assistant to work.
 
     # API_KEY: 32 random bytes, hex-encoded. The user never types this.
     $bytes = New-Object byte[] 32
@@ -99,9 +101,6 @@ if (Test-Path $EnvFile) {
     $template = $template -replace '(?m)^DATA_REGION=.*$',       "DATA_REGION=$region"
     $template = $template -replace '(?m)^SCION_PUBLIC_PORT=.*$', "SCION_PUBLIC_PORT=$port"
     $template = $template -replace '(?m)^API_KEY=.*$',           "API_KEY=$generatedKey"
-    if (-not [string]::IsNullOrWhiteSpace($groqKey)) {
-        $template = $template -replace '(?m)^GROQ_API_KEY=.*$', "GROQ_API_KEY=$groqKey"
-    }
 
     # Write .env as UTF-8 without BOM so docker compose parses it correctly.
     [System.IO.File]::WriteAllText($EnvFile, $template, (New-Object System.Text.UTF8Encoding $false))

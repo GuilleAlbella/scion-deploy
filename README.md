@@ -22,8 +22,9 @@ curl -fsSL https://raw.githubusercontent.com/GuilleAlbella/scion-deploy/main/ins
 
 Detects the distro (Ubuntu / Debian / RHEL / CentOS / Rocky / Alma /
 Fedora), installs Docker if missing, drops everything in `/opt/scion`,
-prompts for region / port / Groq key, auto-generates an admin
-`API_KEY`, pulls images and starts the stack.
+prompts for region and port, auto-generates an admin `API_KEY`,
+pulls images and starts the stack. The TAISA assistant comes
+pre-configured inside the backend image — no extra setup.
 
 ### Windows (for early testing on dev machines with Docker Desktop)
 
@@ -107,7 +108,6 @@ cp .env.example .env
 $EDITOR .env
 #   At minimum set:
 #     - API_KEY (generate with: openssl rand -hex 32)
-#     - GROQ_API_KEY (if using TAISA)
 #     - DATA_REGION
 #     - SCION_PUBLIC_PORT (default 80)
 

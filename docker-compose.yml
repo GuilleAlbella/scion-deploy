@@ -28,9 +28,8 @@ services:
       SCION_BACKEND_HOST: 0.0.0.0
       SCION_BACKEND_PORT: "8000"
       DATA_REGION: ${DATA_REGION:-unset}
-      AI_PROVIDER: ${AI_PROVIDER:-groq}
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
-      GROQ_MODEL: ${GROQ_MODEL:-llama3-70b-8192}
+      # TAISA AI provider config is baked into the backend image. No
+      # runtime env injection needed.
       API_KEY: ${API_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     volumes:
@@ -49,7 +48,7 @@ services:
         condition: service_healthy
     environment:
       # Same-origin via nginx — see nginx.conf.
-      NEXT_PUBLIC_API_URL: /api/v1
+      NEXT_PUBLIC_API_BASE_URL: /api/v1
       NEXT_PUBLIC_API_KEY: ${API_KEY:-}
     labels:
       com.centurylinklabs.watchtower.enable: "true"
