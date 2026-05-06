@@ -5,10 +5,29 @@ for Teradata. The application source code lives in a private repo;
 the compose, nginx config, and bootstrap scripts are kept here so the
 one-liner installers can fetch them anonymously.
 
-The container images this repo references are public on GHCR:
+> ⚠️ **SCION is internal Teradata software in active development.**
+> The container images are private on GHCR. Pulling requires a
+> read-only Personal Access Token, distributed inside the team. See
+> "GHCR access" below.
 
-- `ghcr.io/guillealbella/scion-backend`
-- `ghcr.io/guillealbella/scion-frontend`
+## GHCR access
+
+The first time you install or update on a new machine, the script
+will prompt for a GitHub Personal Access Token (PAT). Get one from
+the SCION team — don't generate your own; we use a single shared
+token so revocation is one click.
+
+Once provided, Docker caches the credentials. Subsequent installs and
+updates on the same machine are silent.
+
+To skip the prompt (e.g. CI environments), set
+`SCION_GHCR_TOKEN=<your-pat>` in your environment before running the
+installer.
+
+## Container images
+
+- `ghcr.io/guillealbella/scion-backend` (private)
+- `ghcr.io/guillealbella/scion-frontend` (private)
 
 ---
 

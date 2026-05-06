@@ -61,6 +61,53 @@ try {
 if (-not $daemonOk) { Fail "Docker daemon not running. Open Docker Desktop and wait for the whale icon to stabilise, then re-run." }
 OK "Docker daemon running"
 
+# ──── GHCR authentication ────
+#
+# SCION images live on a private GHCR namespace because they bake an
+# internal Teradata API key. Anonymous pulls fail with 401. The user
+# does a one-time `docker login` per machine; subsequent installs and
+# updates reuse the cached credentials.
+#
+# Token resolution order:
+#   1. $env:SCION_GHCR_TOKEN  (set in PowerShell profile for permanence)
+#   2. Existing docker creds  (if previously logged in, no-op)
+#   3. Interactive prompt     (paste once, gets cached by docker)
+Step "Verifying GHCR access"
+$ghcrUser = "guillealbella"
+
+# Cheap probe: try a manifest pull on the public small image we always
+# need. If it succeeds anonymously OR with cached creds we're done.
+$probe = docker manifest inspect "ghcr.io/$ghcrUser/scion-backend:latest" 2>$null
+if ($LASTEXITCODE -eq 0) {
+    OK "Already authenticated against GHCR (or images are public)"
+} else {
+    Warn "Anonymous pull failed — GHCR auth needed"
+
+    $token = $env:SCION_GHCR_TOKEN
+    if ([string]::IsNullOrWhiteSpace($token)) {
+        Write-Host ""
+        Write-Host "  SCION images are private. You need a GitHub Personal Access Token"
+        Write-Host "  with 'read:packages' scope. Ask the SCION team if you don't have one."
+        Write-Host ""
+        $secure = Read-Host "  Paste GHCR token (input hidden)" -AsSecureString
+        $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+        try {
+            $token = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+        } finally {
+            [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+        }
+        if ([string]::IsNullOrWhiteSpace($token)) { Fail "No token provided. Aborting." }
+    } else {
+        OK "Using token from `$env:SCION_GHCR_TOKEN"
+    }
+
+    $token | docker login ghcr.io -u $ghcrUser --password-stdin
+    if ($LASTEXITCODE -ne 0) {
+        Fail "docker login ghcr.io failed. Check the token has 'read:packages' scope and isn't expired."
+    }
+    OK "Logged in to GHCR. Credentials cached by Docker for future runs."
+}
+
 # ──── Step 1: deploy directory ────
 Step "Preparing deploy directory at $InstallDir"
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null

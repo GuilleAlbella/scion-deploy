@@ -92,6 +92,41 @@ install_docker_rhel() {
   fi
 }
 
+# ──── GHCR authentication ────
+#
+# SCION images are private (they bake an internal Teradata API key).
+# Token resolution order: $SCION_GHCR_TOKEN env var → cached docker
+# creds → interactive prompt. Once `docker login` succeeds, the
+# credentials are persisted by Docker so future runs are silent.
+ghcr_login_if_needed() {
+  local user="guillealbella"
+  if docker manifest inspect "ghcr.io/$user/scion-backend:latest" >/dev/null 2>&1; then
+    ok "Already authenticated against GHCR (or images are public)"
+    return 0
+  fi
+
+  warn "Anonymous pull failed — GHCR auth needed"
+  local token="${SCION_GHCR_TOKEN:-}"
+  if [ -z "$token" ]; then
+    echo
+    echo "  SCION images are private. You need a GitHub Personal Access Token"
+    echo "  with 'read:packages' scope. Ask the SCION team if you don't have one."
+    echo
+    # `read -s` hides input from the terminal so the token doesn't end up in scrollback.
+    read -r -s -p "  Paste GHCR token (input hidden): " token
+    echo
+    [ -z "$token" ] && fail "No token provided. Aborting."
+  else
+    ok "Using token from \$SCION_GHCR_TOKEN"
+  fi
+
+  echo "$token" | $SUDO docker login ghcr.io -u "$user" --password-stdin
+  if [ $? -ne 0 ]; then
+    fail "docker login ghcr.io failed. Check the token has 'read:packages' scope and isn't expired."
+  fi
+  ok "Logged in to GHCR. Credentials cached by Docker for future runs."
+}
+
 step "Checking Docker"
 if command -v docker >/dev/null && docker compose version >/dev/null 2>&1; then
   ok "Docker + Compose plugin already installed ($(docker --version | awk '{print $3}'))"
@@ -160,6 +195,9 @@ else
 fi
 
 # ──── Step 5: pull + start ────
+step "Verifying GHCR access"
+ghcr_login_if_needed
+
 step "Pulling images from GHCR"
 (cd "$INSTALL_DIR" && $SUDO docker compose pull)
 ok "Images pulled"
