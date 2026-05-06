@@ -42,7 +42,9 @@ pattern bypasses it because the script is piped through
 
 ### Updating
 
-Watchtower auto-pulls new images every 6 hours. To force an upgrade now:
+Run the update script when you want the latest images. The Sidebar's
+version pill (v1.22+) shows when an update is available; until then,
+just run the script periodically.
 
 ```bash
 # Linux
@@ -77,8 +79,7 @@ the SQLite database on disk so a fresh install resumes where you left.
 | ------------------ | ---------------------------------------- | --------------------------------- |
 | `scion-backend`    | `ghcr.io/guillealbella/scion-backend`    | FastAPI + uvicorn                 |
 | `scion-frontend`   | `ghcr.io/guillealbella/scion-frontend`   | Next.js standalone server         |
-| `scion-nginx`      | `nginx:1.27-alpine`                      | Single public port reverse proxy  |
-| `scion-watchtower` | `beatkind/watchtower:latest`             | Auto-pull new images every 6h     |
+| `scion-nginx`      | `nginx:1.29-alpine`                      | Single public port reverse proxy  |
 
 State lives in the named volume `scion_data`, mounted at `/data` on
 the backend container. It contains `/data/scion.db`. Container
@@ -146,8 +147,8 @@ SCION_BACKEND_IMAGE=ghcr.io/guillealbella/scion-backend:1.21.0
 SCION_FRONTEND_IMAGE=ghcr.io/guillealbella/scion-frontend:1.21.0
 ```
 
-Then `docker compose up -d`. Watchtower respects pinned tags and
-won't bump them silently.
+Then `docker compose up -d`. Pinned tags stay pinned — the update
+script only pulls whatever the compose says.
 
 ---
 
@@ -164,10 +165,6 @@ should always be writable.
 **`db_init.py init` fails with "legacy".** A previous SQLite file on
 the volume was created without Alembic. Either restore from backup or
 `docker compose down -v` (destroys data) and start fresh.
-
-**Watchtower not upgrading.** Make sure each container has the
-`com.centurylinklabs.watchtower.enable=true` label (the shipped
-compose has it). Inspect with `docker logs scion-watchtower`.
 
 **Need to roll back to an earlier version.** Pin the image tags in
 `.env` (see "Pinning" above) and `docker compose up -d`.
