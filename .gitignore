@@ -1,0 +1,6 @@
+# Local env file (never commit secrets)
+.env
+
+# Windows / PowerShell module caches that get dropped here when running
+# the install scripts from the repo root for testing.
+Microsoft/
